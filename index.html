@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SMS ITP">
+<meta name="theme-color" content="#003399">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>SMS ITP</title>
+<style>
+/* VOICE: practic, ca un registru de service auto bine ținut
+   IDEA: plăcuța de înmatriculare românească + biletul de programare
+   PICTURE: lista „De anunțat acum”, fiecare client cu plăcuța lui
+   COLOUR and TYPE: albastru UE #003399 dominant, alb, roșu semnal; Barlow Condensed ca pe plăcuțe
+   LAYOUT: bandă albastră cu cifrele zilei, lista de anunțat, formular, registru complet */
+:root{color-scheme:light dark;
+--bg:light-dark(#f4f6fb,#0d1424);--card:light-dark(#fff,#16203a);--ink:light-dark(#10162a,#e9eefb);--mut:light-dark(#5a6480,#9aa6c4);
+--line:light-dark(#dde2ee,#26314f);--blue:#003399;--blue2:light-dark(#003399,#5b82ff);--band:light-dark(#003399,#0a1e5c);
+--red:light-dark(#c8211e,#ff6b62);--org:light-dark(#b85300,#ffa25c);--grn:light-dark(#1d7a46,#5fd393);--soft:light-dark(#e8eefc,#1c2a50)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Barlow,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(24px,4vw,52px) max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+h1,h2{font-family:"Barlow Condensed",sans-serif;font-weight:700;line-height:1.05;text-wrap:balance;margin:0}
+h1{font-size:clamp(34px,5vw,52px)}h2{font-size:30px;margin-bottom:14px}
+.top{background:var(--band);color:#fff;padding-top:max(clamp(24px,4vw,52px),calc(env(safe-area-inset-top) + 16px))}
+body{padding-bottom:env(safe-area-inset-bottom)}
+.top p{margin:8px 0 0;color:#c9d6ff;max-width:60ch}
+.stats{display:flex;flex-wrap:wrap;gap:12px 36px;margin-top:22px;border-top:1px solid #ffffff33;padding-top:16px}
+.stat b{display:block;font:700 clamp(30px,4vw,42px)/1 "Barlow Condensed",sans-serif}
+.stat span{color:#c9d6ff;font-size:14px}
+.note{margin-top:14px;font-size:14px;background:#ffffff1a;padding:8px 12px;border-radius:8px;display:none}
+.note.on{display:block}
+.plate{display:inline-flex;align-items:stretch;border:2px solid #111;border-radius:6px;background:#fff;color:#111;overflow:hidden;font:700 22px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;white-space:nowrap;vertical-align:middle}
+.plate i{background:var(--blue);color:#fff;font:600 11px/1 Barlow,sans-serif;font-style:normal;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:4px 5px;gap:3px}
+.plate i:before{content:"";width:10px;height:10px;border-radius:50%;border:2px dotted #ffd500}
+.plate em{font-style:normal;padding:5px 10px}
+.plate.sm{font-size:17px}.plate.sm em{padding:3px 7px}
+.due{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:14px}
+.tk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;box-shadow:0 1px 0 var(--line)}
+.tk .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.days{font:700 20px/1 "Barlow Condensed",sans-serif;white-space:nowrap}
+.k-due{color:var(--blue2)}.k-late{color:var(--org)}.k-expired{color:var(--red)}.k-sent{color:var(--grn)}.k-ok{color:var(--mut)}
+.who{color:var(--mut);font-size:15px}.who b{color:var(--ink);font-weight:600}
+.msg{background:var(--soft);border-radius:8px;padding:10px 12px;font-size:15px;white-space:pre-wrap}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 15px Barlow,sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.ok{background:var(--grn);border-color:var(--grn);color:#fff}
+.btn.sm{min-height:36px;padding:0 10px;font-size:14px}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #5b82ff;outline-offset:2px}
+.find{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:28px}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+details.np{margin-top:22px}details.np summary{font:700 22px "Barlow Condensed",sans-serif}.np-note{color:var(--mut);font-size:15px;margin:4px 0 12px}
+.tk.nophone{border-style:dashed;border-width:2px}
+.empty{background:var(--card);border:2px dashed var(--line);border-radius:12px;padding:24px;color:var(--mut)}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+@media(max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+label{display:block;font-weight:600;font-size:15px;margin:12px 0 4px}
+label small{font-weight:400;color:var(--mut)}
+input,textarea,select{width:100%;font:16px Barlow,sans-serif;padding:10px 12px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+textarea{min-height:96px;resize:vertical}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 14px}
+@media(max-width:480px){.g2{grid-template-columns:minmax(0,1fr)}}
+.seg{display:flex;gap:6px}.seg label{margin:0;flex:1}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg span{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-weight:600;white-space:nowrap}
+.seg input:checked+span{background:var(--blue);border-color:var(--blue);color:#fff}
+.seg input:focus-visible+span{outline:3px solid #5b82ff}
+.hint{color:var(--mut);font-size:14px;margin:6px 0 0}
+.err{color:var(--red);font-size:14px;min-height:20px;margin:8px 0 0}
+.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.bar input{max-width:340px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:14px;color:var(--mut);font-weight:600}
+td.n{white-space:nowrap}
+details{margin-top:18px}summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+footer{color:var(--mut);font-size:14px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);padding:20px;width:min(420px,92vw)}
+dialog::backdrop{background:#0008}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(120px);background:#10162a;color:#fff;padding:10px 14px;border-radius:10px;display:flex;gap:12px;align-items:center;transition:transform .25s;z-index:9;max-width:92vw}
+.toast.on{transform:translateX(-50%)}.toast button{background:none;border:0;color:#9db6ff;font:600 15px Barlow;cursor:pointer;min-height:36px}
+@media(prefers-reduced-motion:reduce){.toast{transition:none}}
+pre,.scroll{overflow-x:auto}
+@media(max-width:600px){table{font-size:14px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0;padding:3px 12px;padding-inline-start:calc(8em + 12px);text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mut);font-size:13px}.stack td:empty{display:none}}
+</style><script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script></head>
+<body>
+<header class="band top"><div class="wrap">
+  <h1>SMS ITP</h1>
+  <p>Fiecare client primește mesaj cu cel puțin 7 zile înainte să-i expire ITP-ul. Lista de mai jos îți arată pe cine anunți azi.</p>
+  <div class="stats" id="stats"></div>
+  <div class="note" id="note"></div>
+</div></header>
+
+<main>
+<section class="band"><div class="wrap">
+  <div class="find">
+    <label for="pq" style="margin-top:0">Caută clientul după număr de înmatriculare, nume sau telefon</label>
+    <input id="pq" type="search" autocomplete="off" placeholder="ex. IS 11 SSP, Popescu sau 0722 123 456">
+    <div id="pres" class="due" style="margin-top:12px"></div>
+  </div>
+  <div class="row2"><h2 style="margin:0">De anunțat acum</h2><button class="btn pri" id="next" type="button" hidden>Trimite următorul pe WhatsApp</button></div>
+  <div id="dueNP"></div>
+  <div id="due" class="due"><div class="empty">Se încarcă datele…</div></div>
+</div></section>
+
+<section class="band" style="padding-top:0"><div class="wrap cols">
+  <div class="panel">
+    <h2 id="fTitle">Adaugă client</h2>
+    <form id="form" novalidate>
+      <div class="g2">
+        <div><label for="fPlate">Număr de înmatriculare</label><input id="fPlate" autocomplete="off" placeholder="B 123 ABC" style="text-transform:uppercase"></div>
+        <div><label for="fPhone">Telefon <small>(opțional)</small></label><input id="fPhone" type="tel" inputmode="tel" placeholder="0722 123 456"></div>
+      </div>
+      <label for="fName">Nume client <small>(opțional)</small></label><input id="fName" autocomplete="off" placeholder="Ion Popescu">
+      <label for="fLast">Data ultimului ITP</label><input id="fLast" type="date">
+      <label>Valabilitate ITP</label>
+      <div class="seg" id="fPer">
+        <label><input type="radio" name="per" value="6"><span>6 luni</span></label>
+        <label><input type="radio" name="per" value="12" checked><span>12 luni</span></label>
+        <label><input type="radio" name="per" value="24"><span>24 luni</span></label>
+      </div>
+      <p class="hint" id="fPrev">Alege data ultimului ITP ca să vezi când expiră.</p>
+      <p class="err" id="fErr"></p>
+      <div class="acts"><button class="btn pri" type="submit" id="fSave">Salvează clientul</button><button class="btn" type="button" id="fCancel" hidden>Renunță</button></div>
+    </form>
+    <details><summary>Importă mai mulți clienți deodată</summary>
+      <p class="hint">Câte un client pe linie: <b>nr. înmatriculare; telefon; data ultimului ITP; luni (6/12/24); nume</b>. Data poate fi 15.03.2026 sau 2026-03-15.</p>
+      <textarea id="imp" placeholder="B 123 ABC; 0722123456; 15.03.2026; 12; Ion Popescu"></textarea>
+      <p class="err" id="impErr"></p>
+      <button class="btn" id="impBtn" type="button">Importă</button>
+    </details>
+  </div>
+  <div class="panel">
+    <h2>Mesajul trimis</h2>
+    <label for="sLead">Încep să anunț cu câte zile înainte <small>(minim 7)</small></label>
+    <input id="sLead" type="number" min="7" max="60" value="14">
+    <label for="sFirma">Numele service-ului <small>(apare în mesaj ca {firma})</small></label>
+    <input id="sFirma" placeholder="Service Auto Exemplu, tel. 0700 000 000">
+    <label for="sTpl">Textul mesajului</label>
+    <textarea id="sTpl" rows="5"></textarea>
+    <p class="hint">Poți folosi: {nume} sau {, nume} (pune virgula doar dacă există nume), {nr} {data} {zile} {firma}</p>
+    <label>Previzualizare</label>
+    <div class="msg" id="sPrev"></div>
+  </div>
+</div></section>
+
+<section class="band" style="padding-top:0"><div class="wrap">
+  <h2>Toți clienții</h2>
+  <div class="bar"><input id="q" type="search" placeholder="Caută după număr, telefon sau nume" aria-label="Caută"><select id="flt" aria-label="Arată" style="max-width:220px"><option value="ph">Doar cu telefon</option><option value="all">Toți, inclusiv fără telefon</option><option value="np">Doar fără telefon</option></select><button class="btn" id="exp" type="button">Copiază lista (CSV)</button></div>
+  <div id="all"></div>
+  <div class="acts" style="margin-top:12px"><button class="btn" id="more" type="button" hidden>Arată mai mulți</button></div>
+</div></section>
+</main>
+
+<section class="band" style="padding-top:0"><div class="wrap panel">
+  <h2>Copie de siguranță</h2>
+  <p class="hint" style="margin-top:0">Datele se salvează automat pe acest telefon. Ca să aduci clienții din programul de pe calculator, apasă acolo „Salvează o copie”, trimite fișierul pe telefon (e-mail, WhatsApp, Drive) și aici apasă „Încarcă o copie”. Salvează și de aici din când în când o copie.</p>
+  <div class="acts"><button class="btn pri" id="bkDown" type="button">Salvează o copie</button><label class="btn" style="margin:0" for="bkUp">Încarcă o copie</label><input id="bkUp" type="file" accept=".json,application/json" hidden></div>
+  <p class="err" id="bkErr"></p>
+</div></section>
+<footer class="band" style="padding-top:0"><div class="wrap">
+  Butonul WhatsApp deschide direct conversația cu clientul, cu mesajul deja scris; tu apeși doar „Trimite”. Clientul se marchează singur ca anunțat (poți anula din mesajul de jos). Când clientul face ITP-ul, apasă „ITP făcut” și data se mută automat pe următorul ciclu.
+</div></footer>
+
+<dialog id="dlg"><form method="dialog" id="dlgForm">
+  <h2 style="font-size:26px">ITP făcut</h2>
+  <p class="hint" id="dlgWho"></p>
+  <label for="dDate">Data noului ITP</label><input id="dDate" type="date">
+  <label>Valabilitate</label>
+  <div class="seg"><label><input type="radio" name="dper" value="6"><span>6 luni</span></label><label><input type="radio" name="dper" value="12"><span>12 luni</span></label><label><input type="radio" name="dper" value="24"><span>24 luni</span></label></div>
+  <div class="acts" style="margin-top:16px"><button class="btn pri" value="ok">Salvează</button><button class="btn" value="cancel" formnovalidate>Renunță</button></div>
+</form></dialog>
+<div class="toast" id="toast" role="status"><span id="tMsg"></span><button id="tUndo" hidden>Anulează</button></div>
+
+<script type="application/json" id="seed">{"own": [], "base": [], "settings": {}}</script>
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DEF_TPL='Bună ziua{, nume}! Vă reamintim că ITP-ul pentru mașina {nr} expiră pe {data}. Vă așteptăm pentru reînnoire. {firma}';
+const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+let own=[],base=[],baseIds=new Set(),shown=150,nextC=null,clients=[],settings={lead:14,tpl:DEF_TPL,firma:''},db=null,mode='loading',editId=null,undo=null,dlgId=null;
+
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
+const parse=s=>{const [y,m,d]=String(s).split('-').map(Number);return new Date(y,m-1,d)};
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const addM=(d,n)=>{const r=new Date(d.getFullYear(),d.getMonth()+n,1);const last=new Date(r.getFullYear(),r.getMonth()+1,0).getDate();r.setDate(Math.min(d.getDate(),last));return r};
+const fmt=d=>d.toLocaleDateString('ro-RO',{day:'numeric',month:'long',year:'numeric'});
+const fmtS=d=>d.toLocaleDateString('ro-RO');
+const expOf=c=>addM(parse(c.last),+c.per);
+const daysOf=c=>Math.round((expOf(c)-today())/864e5);
+const lead=()=>Math.max(7,+settings.lead||14);
+const status=c=>{const dl=daysOf(c);if(c.sentFor===iso(expOf(c)))return'sent';if(dl<0)return'expired';if(dl<7)return'late';if(dl<=lead())return'due';return'ok'};
+const LBL={due:'De anunțat',late:'Sub 7 zile',expired:'Expirat',sent:'Anunțat',ok:'În regulă'};
+const dayTxt=dl=>dl<0?`expirat de ${-dl} ${-dl===1?'zi':'zile'}`:dl===0?'expiră azi':dl===1?'expiră mâine':`${dl} zile rămase`;
+const normPhone=p=>{let d=String(p).replace(/[^\d+]/g,'');if(d.startsWith('00'))d='+'+d.slice(2);if(/^0\d{9}$/.test(d))d='+4'+d;if(/^40\d{9}$/.test(d))d='+'+d;return d};
+const validPhone=p=>/^\+\d{9,15}$/.test(p);
+const normPlate=p=>String(p).toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+const showPhone=p=>p.startsWith('+40')&&p.length===12?'0'+p.slice(3,6)+' '+p.slice(6,9)+' '+p.slice(9):p;
+const plateKey=p=>String(p).toUpperCase().replace(/[^A-Z0-9]/g,'');
+const fold=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+const matches=(c,q)=>{const t=fold(q).replace(/[^A-Z0-9]/g,'');if(!t)return false;
+  const d=q.replace(/\D/g,'');
+  if(d.length>=4&&/^[\d\s+().-]+$/.test(q)){const pd=c.phone.replace(/\D/g,'');return pd.includes(d.replace(/^0+/,''))}
+  return fold(c.plate).replace(/[^A-Z0-9]/g,'').includes(t)||fold(c.name).replace(/[^A-Z0-9]/g,'').includes(t)};
+const plate=(p,sm)=>`<span class="plate${sm?' sm':''}"><i>RO</i><em>${esc(p)}</em></span>`;
+const message=c=>(settings.tpl||DEF_TPL).replace(/\{, ?nume\}/g,c.name?', '+c.name:'').replace(/\{nume\}/g,c.name||'').replace(/\{nr\}/g,c.plate).replace(/\{data\}/g,fmt(expOf(c))).replace(/\{zile\}/g,Math.max(0,daysOf(c))).replace(/\{firma\}/g,settings.firma||'').trim();
+const smsHref=c=>`sms:${c.phone}${IOS?'&':'?'}body=${encodeURIComponent(message(c))}`;
+const waHref=c=>`https://wa.me/${c.phone.replace(/\D/g,'')}?text=${encodeURIComponent(message(c))}`;
+
+/* --- stocare --- */
+const LS='itp-yskos-offline-v1';
+const SEED=JSON.parse(document.getElementById('seed').textContent);
+let storageOk=true;
+const loadLocal=()=>{let o=null;try{o=JSON.parse(localStorage.getItem(LS)||'null')}catch{storageOk=false}
+  if(o&&Array.isArray(o.clients)){own=o.clients;settings={...settings,...(o.settings||{})}}
+  else{own=SEED.own.map(x=>({...x}));settings={...settings,...SEED.settings};saveLocal()}
+  merge()};
+const saveLocal=()=>{try{localStorage.setItem(LS,JSON.stringify({clients:own,settings,savedAt:new Date().toISOString()}))}catch{storageOk=false}};
+/* clienții salvați (own) se pun peste lista din PDF-uri (base); un client din PDF șters rămâne marcat cu deleted */
+function merge(){const m=new Map();for(const b of base)m.set(b.id,b);for(const c of own)m.set(c.id,{...(m.get(c.id)||{}),...c});clients=[...m.values()].filter(c=>!c.deleted&&c.plate)}
+async function put(c){
+  const o={...c};delete o.deleted;
+  if(db){await db.collection('clients').doc(o.id).set(o)}
+  else{const i=own.findIndex(x=>x.id===o.id);if(i<0)own.push(o);else own[i]=o;saveLocal();merge();render()}
+}
+async function del(c){
+  if(baseIds.has(c.id)){const t={id:c.id,plate:c.plate,deleted:true};
+    if(db){await db.collection('clients').doc(c.id).set(t)}else{const i=own.findIndex(x=>x.id===c.id);if(i<0)own.push(t);else own[i]=t;saveLocal();merge();render()}return}
+  if(db){await db.collection('clients').doc(c.id).delete()}
+  else{own=own.filter(x=>x.id!==c.id);saveLocal();merge();render()}
+}
+let setT=null,setBusy=false,setAgain=false;
+function saveSettings(){clearTimeout(setT);setT=setTimeout(async()=>{
+  if(!db){saveLocal();return}
+  if(setBusy){setAgain=true;return}
+  setBusy=true;try{await db.doc('settings/main').set({...settings})}catch(e){toast('Setările nu s-au putut salva.')}
+  setBusy=false;if(setAgain){setAgain=false;saveSettings()}
+},600)}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const safe=async(fn,msg)=>{try{await fn()}catch(e){toast(msg||'Nu s-a putut salva. Încearcă din nou.')}};
+
+/* --- afișare --- */
+const card=c=>{const s=status(c),dl=daysOf(c);
+  if(!c.phone)return`<article class="tk nophone">
+    <div class="row">${plate(c.plate)}<span class="days k-${s}">${dayTxt(dl)}</span></div>
+    <div class="who">${c.marca?esc(c.marca)+' · ':''}<b class="k-late">fără telefon</b> · expiră ${fmt(expOf(c))}</div>
+    <div class="acts"><button class="btn pri" data-edit="${c.id}">Adaugă telefon</button><button class="btn" data-copy="${c.id}">Copiază mesajul</button>${s==='sent'?'<span class="k-sent" style="align-self:center;font-weight:600">Anunțat ✓</span>':`<button class="btn ok" data-sent="${c.id}">Marchează anunțat</button>`}<button class="btn" data-done="${c.id}">ITP făcut</button></div>
+  </article>`;
+  return`<article class="tk">
+    <div class="row">${plate(c.plate)}<span class="days k-${s}">${dayTxt(dl)}</span></div>
+    <div class="who">${c.name?`<b>${esc(c.name)}</b> · `:''}<span style="white-space:nowrap">${esc(showPhone(c.phone))}</span> · expiră ${fmt(expOf(c))}</div>
+    <div class="msg">${esc(message(c))}</div>
+    <div class="acts"><a class="btn pri" data-go="${c.id}" href="${esc(waHref(c))}" target="_blank" rel="noopener">Trimite pe WhatsApp</a><a class="btn" data-go="${c.id}" href="${esc(smsHref(c))}">SMS</a><button class="btn" data-copy="${c.id}">Copiază</button>${s==='sent'?'<span class="k-sent" style="align-self:center;font-weight:600">Anunțat ✓</span>':`<button class="btn ok" data-sent="${c.id}">Marchează trimis</button>`}</div>
+  </article>`};
+function render(){
+  const list=clients.filter(c=>c.last&&c.per);
+  const withPh=list.filter(c=>c.phone);
+  const isDue=c=>['due','late','expired'].includes(status(c));
+  const due=withPh.filter(isDue).sort((a,b)=>daysOf(a)-daysOf(b));
+  const in30=withPh.filter(c=>{const d=daysOf(c);return d>=0&&d<=30}).length;
+  const sent=withPh.filter(c=>status(c)==='sent').length;
+  $('#stats').innerHTML=[[due.length,'de anunțat azi'],[in30,'expiră în 30 de zile'],[sent,'anunțați deja'],[withPh.length,'clienți cu telefon'],[list.length-withPh.length,'mașini fără telefon']].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+  if(mode==='loading'){return}
+  $('#due').innerHTML=due.length?due.map(card).join(''):`<div class="empty">${list.length?`Nimeni de anunțat azi. Următorii clienți apar aici cu ${lead()} zile înainte de expirare.`:'Încă nu ai clienți. Adaugă primul client în formularul de mai jos.'}</div>`;
+  nextC=due.find(c=>c.phone)||null;$('#next').hidden=!nextC;
+  const pqRaw=$('#pq').value.trim();
+  const found=pqRaw?list.filter(c=>matches(c,pqRaw)).sort((a,b)=>expOf(a)-expOf(b)):[];
+  $('#pres').innerHTML=!pqRaw?'':found.length?found.slice(0,12).map(card).join('')+(found.length>12?`<div class="empty">Încă ${found.length-12} rezultate. Scrie mai mult ca să restrângi căutarea.</div>`:''):'<div class="empty">Niciun client nu se potrivește.</div>';
+  const q=$('#q').value.trim();
+  const fl=$('#flt').value;
+  const allRows=list.filter(c=>(fl==='all'||(fl==='ph'?c.phone:!c.phone))&&(!q||matches(c,q))).sort((a,b)=>expOf(a)-expOf(b));
+  const rows=allRows.slice(0,shown);
+  $('#more').hidden=allRows.length<=shown;$('#more').textContent=`Arată mai mulți (încă ${allRows.length-shown})`;
+  $('#all').innerHTML=!list.length?'':!rows.length?'<div class="empty">Niciun client nu se potrivește căutării.</div>':`<table class="stack"><thead><tr><th>Număr</th><th>Client</th><th>Telefon</th><th>Ultimul ITP</th><th>Valabil</th><th>Expiră</th><th>Stare</th><th>Acțiuni</th></tr></thead><tbody>${rows.map(c=>{const s=status(c);return`<tr>
+    <td>${plate(c.plate,1)}</td><td>${c.name?esc(c.name):c.marca?`<span class="k-ok">${esc(c.marca)}</span>`:''}</td><td class="n">${c.phone?esc(showPhone(c.phone)):`<button class="btn sm" data-edit="${c.id}">Adaugă telefon</button>`}</td><td class="n">${fmtS(parse(c.last))}</td><td class="n">${c.per} luni</td><td class="n">${fmtS(expOf(c))}</td>
+    <td class="n k-${s}"><b>${LBL[s]}</b>${s==='ok'||s==='sent'?'':` · ${dayTxt(daysOf(c))}`}</td>
+    <td><div class="acts"><button class="btn sm" data-done="${c.id}">ITP făcut</button><button class="btn sm" data-edit="${c.id}">Editează</button><button class="btn sm" data-del="${c.id}">Șterge</button></div></td></tr>`}).join('')}</tbody></table>`;
+}
+function renderSettings(){
+  const a=document.activeElement;
+  if(a!==$('#sLead'))$('#sLead').value=settings.lead;
+  if(a!==$('#sFirma'))$('#sFirma').value=settings.firma||'';
+  if(a!==$('#sTpl'))$('#sTpl').value=settings.tpl||DEF_TPL;
+  const ex={name:'Ion Popescu',plate:'B 123 ABC',phone:'+40722123456',per:12};
+  ex.last=iso(new Date(addM(today(),-12).getTime()+10*864e5));
+  $('#sPrev').textContent=message(ex);
+}
+function note(t){$('#note').textContent=t;$('#note').classList.toggle('on',!!t)}
+let tT=null;
+function toast(msg,undoFn){$('#tMsg').textContent=msg;$('#tUndo').hidden=!undoFn;undo=undoFn||null;$('#toast').classList.add('on');clearTimeout(tT);tT=setTimeout(()=>$('#toast').classList.remove('on'),undoFn?7000:3500)}
+
+/* --- formular --- */
+const perVal=()=>+document.querySelector('input[name=per]:checked').value;
+function preview(){const v=$('#fLast').value;$('#fPrev').textContent=v?`ITP-ul expiră pe ${fmt(addM(parse(v),perVal()))}. Mesajul apare în listă cu ${lead()} zile înainte.`:'Alege data ultimului ITP ca să vezi când expiră.'}
+function resetForm(){editId=null;$('#form').reset();$('#fTitle').textContent='Adaugă client';$('#fSave').textContent='Salvează clientul';$('#fCancel').hidden=true;$('#fErr').textContent='';preview()}
+$('#form').addEventListener('submit',e=>{e.preventDefault();
+  const plateV=normPlate($('#fPlate').value),phone=normPhone($('#fPhone').value),last=$('#fLast').value;
+  const err=!plateV?'Scrie numărul de înmatriculare.':phone&&!validPhone(phone)?'Numărul de telefon nu pare corect (ex. 0722 123 456).':!last?'Alege data ultimului ITP.':'';
+  $('#fErr').textContent=err;if(err)return;
+  if(!editId){const ex=clients.find(x=>!x.phone&&plateKey(x.plate)===plateKey(plateV));if(ex)editId=ex.id}
+  const old=clients.find(c=>c.id===editId);
+  const c={...(old||{}),id:editId||uid(),plate:plateV,phone,name:$('#fName').value.trim(),last,per:perVal()};
+  if(old&&(old.last!==c.last||+old.per!==c.per))delete c.sentFor;
+  if(!old&&clients.some(x=>x.plate.replace(/ /g,'')===plateV.replace(/ /g,'')))toast('Atenție: mai ai un client cu numărul '+plateV+'.');
+  else toast(old?'Client actualizat.':'Client adăugat.');
+  safe(()=>put(c));resetForm();
+});
+$('#fCancel').onclick=resetForm;
+$('#fLast').oninput=preview;$('#fPer').onchange=preview;
+$('#fPlate').onblur=()=>{$('#fPlate').value=normPlate($('#fPlate').value)};
+
+/* --- import / export --- */
+const parseDate=s=>{s=s.trim();let m=s.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?s:''};
+$('#impBtn').onclick=async()=>{
+  const lines=$('#imp').value.split('\n').map(l=>l.trim()).filter(Boolean);const bad=[],good=[];
+  lines.forEach((l,i)=>{const p=l.split(/[;,\t]/).map(x=>x.trim());const c={id:uid()+i,plate:normPlate(p[0]||''),phone:normPhone(p[1]||''),last:parseDate(p[2]||''),per:[6,12,24].includes(+p[3])?+p[3]:12,name:p[4]||''};
+    if(c.plate&&(!c.phone||validPhone(c.phone))&&c.last)good.push(c);else bad.push(i+1)});
+  $('#impErr').textContent=bad.length?`Liniile ${bad.join(', ')} nu au putut fi citite și au rămas în căsuță.`:'';
+  for(const c of good){await safe(()=>put(c))}
+  $('#imp').value=lines.filter((l,i)=>bad.includes(i+1)).join('\n');
+  if(good.length)toast(`Am importat ${good.length} ${good.length===1?'client':'clienți'}.`);
+};
+$('#exp').onclick=async()=>{const t=['Numar;Telefon;Ultimul ITP;Luni;Nume;Expira',...clients.map(c=>[c.plate,c.phone?showPhone(c.phone):'',fmtS(parse(c.last)),c.per,c.name||'',fmtS(expOf(c))].join(';'))].join('\n');
+  try{await navigator.clipboard.writeText(t);toast('Lista a fost copiată. O poți lipi în Excel.')}catch{toast('Nu am putut copia automat.')}};
+
+/* --- acțiuni pe clienți --- */
+document.addEventListener('click',async e=>{
+  const a=e.target.closest('a[data-go]');
+  if(a){const c=clients.find(x=>x.id===a.dataset.go);if(c&&status(c)!=='sent'){const prev={...c};safe(()=>put({...c,sentFor:iso(expOf(c)),sentAt:new Date().toISOString()}));toast(`${c.plate} marcat ca anunțat.`,()=>safe(()=>put(prev)))}return}
+  const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+  const c=clients.find(x=>x.id===(d.copy||d.sent||d.done||d.edit||d.del));
+  if(d.copy&&c){try{await navigator.clipboard.writeText(message(c));toast('Mesaj copiat.')}catch{toast('Nu am putut copia automat.')}}
+  if(d.sent&&c){const prev={...c};safe(()=>put({...c,sentFor:iso(expOf(c)),sentAt:new Date().toISOString()}));toast(`${c.plate} marcat ca anunțat.`,()=>safe(()=>put(prev)))}
+  if(d.edit&&c){editId=c.id;$('#fPlate').value=c.plate;$('#fPhone').value=showPhone(c.phone);$('#fName').value=c.name||'';$('#fLast').value=c.last;
+    document.querySelector(`input[name=per][value="${c.per}"]`).checked=true;$('#fTitle').textContent='Editează '+c.plate;$('#fSave').textContent='Salvează modificările';$('#fCancel').hidden=false;preview();$('#form').scrollIntoView({behavior:'smooth',block:'start'});(c.phone?$('#fPlate'):$('#fPhone')).focus({preventScroll:true})}
+  if(d.del&&c){const prev={...c};safe(()=>del(c),'Nu s-a putut șterge.');toast(`${c.plate} a fost șters.`,()=>safe(()=>put(prev)))}
+  if(d.done&&c){dlgId=c.id;$('#dlgWho').innerHTML=plate(c.plate,1)+(c.name?' · '+esc(c.name):'');$('#dDate').value=iso(today());
+    document.querySelector(`input[name=dper][value="${c.per}"]`).checked=true;try{$('#dlg').showModal()}catch{$('#dlg').setAttribute('open','')}}
+});
+$('#dlg').addEventListener('close',()=>{const c=clients.find(x=>x.id===dlgId);
+  if($('#dlg').returnValue==='ok'&&c&&$('#dDate').value){const n={...c,last:$('#dDate').value,per:+document.querySelector('input[name=dper]:checked').value};delete n.sentFor;delete n.sentAt;
+    safe(()=>put(n));toast(`${c.plate}: următorul ITP pe ${fmt(expOf(n))}.`)}dlgId=null});
+$('#tUndo').onclick=()=>{if(undo)undo();undo=null;$('#toast').classList.remove('on')};
+$('#q').oninput=()=>{shown=150;render()};$('#flt').onchange=()=>{shown=150;render()};$('#more').onclick=()=>{shown+=150;render()};$('#pq').oninput=render;
+$('#next').onclick=()=>{const c=nextC;if(!c)return;const a=document.createElement('a');a.href=waHref(c);a.target='_blank';a.rel='noopener';a.dataset.go=c.id;a.hidden=true;document.body.appendChild(a);a.click();a.remove()};
+
+/* --- copie de siguranță --- */
+/* copia conține tot: clienții tăi și mașinile fără telefon din PDF-uri (cu marcajele de ștergere), ca să poată fi încărcată în aplicația Android */
+const allForBackup=()=>{const m=new Map();for(const x of base)m.set(x.id,{...x});for(const c of own)m.set(c.id,{...(m.get(c.id)||{}),...c});return [...m.values()]};
+$('#bkDown').onclick=()=>{const blob=new Blob([JSON.stringify({app:'sms-itp',savedAt:new Date().toISOString(),clients:allForBackup(),settings},null,1)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='copie-sms-itp-'+iso(new Date())+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast('Copia a fost descărcată.')};
+$('#bkUp').onchange=async e=>{const f=e.target.files[0];if(!f)return;$('#bkErr').textContent='';
+  try{const o=JSON.parse(await f.text());if(!Array.isArray(o.clients))throw 0;own=o.clients;settings={...settings,...(o.settings||{})};saveLocal();merge();renderSettings();render();toast(`Am încărcat copia (${own.length} înregistrări).`)}
+  catch{$('#bkErr').textContent='Fișierul nu pare o copie a acestei aplicații.'}e.target.value=''};
+
+/* --- setări --- */
+$('#sLead').oninput=()=>{const v=Math.min(60,Math.max(7,parseInt($('#sLead').value)||7));settings.lead=v;saveSettings();render();preview()};
+$('#sLead').onblur=()=>{$('#sLead').value=lead()};
+$('#sFirma').oninput=()=>{settings.firma=$('#sFirma').value;saveSettings();renderSettings();render()};
+$('#sTpl').oninput=()=>{settings.tpl=$('#sTpl').value||DEF_TPL;saveSettings();renderSettings();render()};
+
+/* --- pornire --- */
+renderSettings();render();
+base=SEED.base.map(x=>({...x,phone:'',name:''}));baseIds=new Set(SEED.base.map(x=>x.id));
+mode='local';loadLocal();
+try{localStorage.setItem(LS+'-t','1');localStorage.removeItem(LS+'-t')}catch{storageOk=false}
+note(storageOk?'':'Atenție: datele nu pot fi salvate pe acest telefon. Deschide aplicația din Safari și adaug-o pe ecranul principal.');
+renderSettings();render();
+setInterval(()=>{if(mode!=='loading')render()},15*60e3);
+if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&mode!=='loading')render()});
+}
+</script>
+</body>
+</html>
